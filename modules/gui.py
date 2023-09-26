@@ -44,17 +44,17 @@ def open_student_list():
     # Öğrenci Listesi için Listbox ekleyin
     student_listbox = tk.Listbox(StudentList)
     student_listbox.grid(row=5, column=0, rowspan=100,columnspan=4, padx=10, pady=10, sticky="nsew")
-
+    student_listbox.insert(tk.END,"|NO| Öğrenci Adı | e-posta |  telefon")
     # Öğrenci Ekle butonu
     add_student_button = tk.Button(StudentList,width=17, text="Öğrenci Ekle", command=lambda: save_student())
     add_student_button.grid(row=0, column=1, padx=10, pady=5)
 
     # Öğrenci Sil butonu
-    delete_student_button = tk.Button(StudentList,width=17, text="Öğrenci Sil", command=delete_student)
+    delete_student_button = tk.Button(StudentList,width=17, text="Öğrenci Sil", command=lambda: delete_selected_student(student_listbox))
     delete_student_button.grid(row=1, column=1, padx=10, pady=5)
 
     # Öğrenci Düzenle butonu
-    edit_student_button = tk.Button(StudentList,width=17, text="Öğrenci Düzenle", command=edit_student)
+    edit_student_button = tk.Button(StudentList,width=17, text="Öğrenci Düzenle", command=lambda: edit_student(student_listbox))
     edit_student_button.grid(row=2, column=1, padx=10, pady=5)
     # Öğrenci Listesi Yenile butonu
     edit_student_button = tk.Button(StudentList,width=17, text="Yenile ", command=lambda:get_students(student_listbox))
@@ -88,13 +88,7 @@ def open_student_list():
     StudentList.mainloop()
 
 
-def delete_student():
-    # Öğrenci silme işlemini burada gerçekleştirin ve listbox'tan kaldırın.
-    pass
 
-def edit_student():
-    # Öğrenci düzenleme işlemini burada gerçekleştirin.
-    pass
 def save_student():
     name = name_entry.get()
     surname = surname_entry.get()
@@ -105,6 +99,48 @@ def save_student():
     dbh.add_student(name, surname, email, phone)
 
 def get_students(student_listbox):
+    student_listbox.delete(0,tk.END)
+    student_listbox.insert(tk.END,"|NO| Öğrenci Adı | e-posta |  telefon")
     students = dbh.get_students()
     for student in students:
-        student_listbox.insert(tk.END, f"{student[0]} - {student[1]} {student[2]} ({student[3]})")
+        student_listbox.insert(tk.END, f"{student[0]} - {student[1]} {student[2]} ({student[3]}) - {student[4]}")
+
+def delete_selected_student(listbox):
+    # Seçilen öğrencinin indeksini al
+    selected_index = listbox.curselection()
+
+    if selected_index:
+        # Seçilen öğrencinin indeksini çıkar
+        index = int(selected_index[0])
+
+        # Öğrenci adını ve soyadını al
+        student_info = listbox.get(index)
+        student_id, _ = student_info.split(" - ", 1)
+
+        # Veritabanından öğrenciyi sil
+        dbh.delete_student(student_id)
+
+        # Listbox'tan seçilen öğrenciyi kaldır
+        listbox.delete(index)
+
+
+
+def edit_student(listbox):
+    # Seçilen öğrenciyi al
+    new_name = name_entry.get()
+    new_surname = surname_entry.get()
+    new_email = email_entry.get()
+    new_phone = phone_entry.get()
+    selected_index = listbox.curselection()
+
+    if selected_index:
+        index = int(selected_index[0])
+        student_info = listbox.get(index)
+        student_id, _ = student_info.split(" - ", 1)
+        print(student_id)
+        # Veritabanında öğrenciyi güncelle
+        dbh.edit_student(student_id, new_name, new_surname, new_email, new_phone)
+
+        # Listbox'ı temizle ve güncel öğrencileri yükle
+        listbox.delete(0, tk.END)
+        get_students(listbox)
